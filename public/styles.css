@@ -1,0 +1,30 @@
+body {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    padding: 20px 100px 0px 100px;
+    background: #FFCFAD;
+}
+
+.quiz{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+button {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+textarea {
+    width: 100%;
+    max-width: 500px;
+    height: 100px;
+}
+
+/*Footer*/
+footer{
+    border-top: 1px solid;
+    padding-top: 5px;
+    margin-top: 70px;
+}
