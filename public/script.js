@@ -1,11 +1,9 @@
-Vue.component('star-rating', VueStarRating.default);
-
 var app = new Vue({
     el: '#app',
 
     data: {
-        username = "username";
-        password = "password";
+        username: '',
+        password: '',
         number: '',
         max: 0,
         currentDrink: '',
@@ -14,8 +12,14 @@ var app = new Vue({
         drinkArray: [],
         drinkOptionsArray: [],
         guessedDrinks: [],
-        startButton: true,
+        startButton: false,
         nextQuestionButton: false,
+        signInScreen: true,
+        quizScreen: false,
+        areYouSureMessage: false,
+        forgotPass: true,
+        message: '',
+        forgotten:'',
         answerCounter: 0,
         results: '',
         results: '',
@@ -33,9 +37,6 @@ var app = new Vue({
 
     created: function() {
         this.cocktail();
-        (var i = 0; i < this.drinkArray.length; ++i){
-            this.drinkOptionsArray[i] = i;
-        }
     },
 
     watch: {
@@ -54,21 +55,29 @@ var app = new Vue({
 
     methods: {
         signIn: function() {
-            axios.get("api/credentials/", {
-                username: this.username
+            var myUsername = this.username;
+            axios.post("api/credentials/get/", {
+                username: myUsername
                 }).then(response => {
-                    if (response.foundUsername) {
-                        if (response.password === this.password) {
-                            this.guessedDrinks = response.guessedDrinks;
+                    if (response.data.foundUsername) {
+                        if (response.data.credential.password === this.password) {
+                            this.guessedDrinks = response.data.credential.guessedDrinks;
+                            this.answerCounter = response.data.credential.answerCounter;
+                            this.message = "";
+                            this.signInScreen = false;
+                            this.startButton = true;
                         }
                         else {
-                            //error, incorrect password
+                            this.message = "Username and password don't match. Please try again. :)";
                         }
                     }
                     else {
-                        this.createAccount
-                    }
-
+                        this.createAccount();
+                        this.message = "";
+                        this.signInScreen = false;
+                        this.startButton = true;
+            }
+            this.forgotten = "";
                 return true;
         }).catch(err => {
             });
@@ -80,19 +89,85 @@ var app = new Vue({
                 password: this.password,
                 guessedDrinks: this.drinkOptionsArray
             }).then(response => {
-                guessedDrinks = response.guessedDrinks;
+                this.guessedDrinks = response.data.credential.guessedDrinks;
                 console.log(":)");
             })
         },
 
+        updateAccount: function () {
+            axios.put("api/credentials/update/", {
+                username: this.username,
+                guessedDrinks: this.guessedDrinks,
+                answerCounter: this.answerCounter
+            }).then(response => {
+                console.log("happiness :D");
+            }).catch(err => {
+            });
+        },
+
+        deleteAccountAreYouSure: function () {
+                this.startButton = false;
+                this.nextQuestionButton = false;
+                this.signInScreen = false;
+                this.quizScreen = false;
+                this.areYouSureMessage = true;
+        },
+
+        deleteAccountNo: function () {
+            this.areYouSureMessage = false;
+            this.quizScreen = true;
+        },
+
+        deleteAccountYes: function () {
+            axios.delete("/api/credentials/" + this.username).then(response => {
+                this.startButton = false;
+                this.nextQuestionButton = false;
+                this.signInScreen = true;
+                this.quizScreen = false;
+                this.areYouSureMessage = false;
+                this.username = "";
+                this.password = "";
+                this.answerCounter = 0;
+                this.guessedDrinks = this.drinkOptionsArray;
+                this.message = "Exito! Account Deleted! Stay sober! :)";
+            }).catch(err => {
+            });
+        },
+
+        forgotPassword: function () {
+            this.forgotPass = false;
+            this.forgotten = "Nope, too bad."
+        },
+
+        prettyPlease: function () {
+            this.forgotPass = true;
+            this.forgotten = "Ai'ight, since you asked so nicely. Here you go!";
+
+            var myUsername = this.username;
+            axios.post("api/credentials/get/", {
+                username: myUsername
+            }).then(response => {
+                if (response.data.foundUsername) {
+                this.password = response.data.credential.password;
+            }
+        else {
+                this.forgotten = "Hey! That's not even a valid username!";
+            }
+            return true;
+        }).catch(err => {
+            });
+        },
+
         start: function() {
             this.startButton = false;
+            this.quizScreen = true;
             this.setCurrentDrink();
             this.selectAnswer();
             this.setAnswers();
         },
         nextQuestion: function() {
             this.nextQuestionButton = false;
+            this.updateAccount();
             this.start();
         },
 
@@ -196,9 +271,14 @@ var app = new Vue({
         },
 
         setCurrentDrink: function() {
-            var randNum = Math.floor(Math.random() * (this.max));
-            this.currentDrink = this.drinkArray[randNum].strDrink;
-            this.currentPicture = this.drinkArray[randNum].strDrinkThumb;
+            if (this.guessedDrinks.length === 0) {
+                this.guessedDrinks = this.drinkOptionsArray;
+            }
+            var randNum = Math.floor(Math.random() * (this.guessedDrinks.length));
+            var drinkIndex = this.guessedDrinks[randNum];
+            this.guessedDrinks.splice(randNum, 1);
+            this.currentDrink = this.drinkArray[drinkIndex].strDrink;
+            this.currentPicture = this.drinkArray[drinkIndex].strDrinkThumb;
         },
 
         cocktail: function() {
@@ -208,6 +288,10 @@ var app = new Vue({
             console.log(json);
             this.drinkArray = json.drinks;
             this.max = this.drinkArray.length - 1;
+            for (var i = 0; i < this.drinkArray.length; ++i){
+                this.drinkOptionsArray[i] = i;
+            }
+            this.guessedDrinks = this.drinkOptionsArray;
             this.setCurrentDrink();
             return true;
         }).catch(err => {

@@ -7,62 +7,72 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(express.static('public'))
 
-var credentials = [];
-//var id = 0;
+let credentials = [];
+//let id = 0;
 
-app.get('/api/credentials', (req, res) => {
-    var username = req.body.username;
-    var password = "";
-    var guessedDrinks = [];
-    var foundUsername = false;
-    for (var i = 0; i < credentials.length; ++i){
-        if (credentials[i].username === username);
-        {
+app.post('/api/credentials/get', (req, res) => {
+    let myUsername = req.body.username;
+    let password = "";
+    let guessedDrinks = [];
+    let foundUsername = false;
+    let answerCounter = 0;
+    for (let i = 0; i < credentials.length; ++i){
+        if (credentials[i].username === myUsername){
             foundUsername = true;
-            guessedDrinks = credentials[i];
+            guessedDrinks = credentials[i].guessedDrinks;
             password = credentials[i].password;
-            i = credentials.length;
+            answerCounter = credentials[i].answerCounter;
+            break;
         }
     }
 
-    var credential = {username:username, password:password, drinksArray: guessedDrinks};
+    let credential = {username: myUsername, password: password, guessedDrinks: guessedDrinks,
+        answerCounter: answerCounter};
 
-    res.send({username: username, password: password, guessedDrinks: guessedDrinks, foundUsername: foundUsername});
+    res.send({credential: credential, foundUsername: foundUsername});
+});
+
+app.get('/api/credentials', (req, res) => {
+    res.send(credentials);
 });
 
 app.post('/api/credentials', (req, res) => {
-    var credential = {username: req.body.username, password: req.body.password, drinksArray: req.body.guessedDrinks};
+    let answerCounter = 0;
+    let credential = {username: req.body.username, password: req.body.password, guessedDrinks: req.body.guessedDrinks,
+        answerCounter: answerCounter};
     credentials.push(credential);
-    res.send({username: username, password: password, guessedDrinks: guessedDrinks});
+    res.send({credential: credential});
     console.log("done son");
 });
 
-app.put('/api/credentials/:id', (req, res) => {
-    var id = parseInt(req.params.id);
-    var credentialsMap = credentials.map(credential => { return credential.id; });
-    var index = credentialsMap.indexOf(id);
-    var credential = credentials[index];
-    //credential.completed = req.body.completed;
-    //credential.text = req.body.text;
-    //credential.selected = req.body.selected;
-  //   // handle drag and drop re-ordering
-  //   if (req.body.orderChange) {
-  //     var indexTarget = credentialsMap.indexOf(req.body.orderTarget);
-  //     credentials.splice(index,1);
-  //     credentials.splice(indexTarget,0,credential);
-  // }
-  res.send(credential);
+app.put('/api/credentials/:username', (req, res) => {
+    let myUsername = req.body.username;
+
+    let foundUsername = false;
+    for (let i = 0; i < credentials.length; ++i){
+        if (credentials[i].username === myUsername){
+            credentials[i].guessedDrinks = req.body.guessedDrinks;
+            credentials[i].answerCounter = req.body.answerCounter;
+            console.log(req.body.answerCounter + ", " + credentials[i].answerCounter);
+            foundUsername = true;
+            break;
+        }
+    }
+
+  res.send(foundUsername);
 });
 
-app.delete('/api/credentials/:id', (req, res) => {
-  var id = parseInt(req.params.id);
-  var removeIndex = credentials.map(credential => { return credential.id; }).indexOf(id);
-  if (removeIndex === -1) {
-    res.status(404).send("Sorry, that credential doesn't exist");
-    return;
-  }
-  credentials.splice(removeIndex, 1);
-  res.sendStatus(200);
+app.delete('/api/credentials/:username', (req, res) => {
+    let myUsername = req.params.username;
+
+    for (let i = 0; i < credentials.length; ++i){
+        if (credentials[i].username === myUsername){
+            credentials.splice(i, 1);
+            break;
+        }
+    }
+
+    res.sendStatus(200);
 });
 
-app.listen(3000, () => console.log('Server listening on port 3000!'))
+app.listen(4040, () => console.log('Server listening on port 4040!'))
