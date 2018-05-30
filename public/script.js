@@ -30,7 +30,7 @@ var app = new Vue({
         answerArray: ["answerA", "answerB", "answerC", "answerD"],
         correctArray: ["Right you are!", "Attaboy!", "Righto!", "Hot Dawg!", "Couldn’t have done it better myself",
                         "Right on", "Outstanding", "Right on the money"],
-        incorrectArray: ["Incorrect: Sorry my friend", "Incorrect, Incorrect: Better luck next time",
+        incorrectArray: ["Incorrect: Sorry my friend", "Incorrect", "Incorrect: Better luck next time",
                         "Incorrect: What are you? Mormon?", "Incorrect: sorry Shirley Temple",
                         "Incorrect: I guess you only know the virgin drinks"],
 },
